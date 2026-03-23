@@ -103,7 +103,7 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # --- 5. DEVELOPMENT BY BUSINESS NAME & PROCESSOR GROUPED ---
+# --- 5. DEVELOPMENT BY BUSINESS NAME & PROCESSOR GROUPED ---
     st.header("Volume Shift Analysis")
     st.write("100% Stacked Bar Charts to visualize share shifts over time.")
     
@@ -112,17 +112,24 @@ if uploaded_file is not None:
     with col3:
         st.subheader("Business Name Share")
         biz_monthly = df.groupby(['Month', 'Business Name'])['Successful Trx'].sum().reset_index()
+        
+        # Removed barnorm from here
         fig_biz = px.bar(biz_monthly, x="Month", y="Successful Trx", color="Business Name", 
-                         title="Share of Total by Business Name", barnorm='percent')
+                         title="Share of Total by Business Name")
+        # Added it to the layout here
+        fig_biz.update_layout(barnorm='percent') 
+        
         st.plotly_chart(fig_biz, use_container_width=True)
 
     with col4:
         st.subheader("Processor Share")
+        # Removed barnorm from here
         fig_proc = px.bar(proc_monthly, x="Month", y="Successful Trx", color="Processor grouped", 
-                          title="Share of Total by Processor Grouped", barnorm='percent')
+                          title="Share of Total by Processor Grouped")
+        # Added it to the layout here
+        fig_proc.update_layout(barnorm='percent')
+        
         st.plotly_chart(fig_proc, use_container_width=True)
-
-    st.divider()
 
     # --- 6. SHARES BASED ON CC TYPE & CC CATEGORY ---
     st.header("Credit Card Dimensions (Overall)")
