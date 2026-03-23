@@ -148,29 +148,44 @@ if uploaded_file is not None:
 
     st.divider()
 
-    # --- 7. SANKEY DIAGRAM ---
+# --- 7. SANKEY DIAGRAM ---
     st.header("Transaction Flow (Sankey Diagram)")
-    st.write("Visualizing the flow of Successful Transactions: Business Name ➔ Processor ➔ CC Category ➔ CC Type")
+    st.write("Visualizing the flow of Successful Transactions: Processor ➔ Business Group ➔ CC Category ➔ CC Type")
 
-    # Aggregate data for Sankey
-    sankey_df = df.groupby(['Business Name', 'Processor grouped', 'Cc Category', 'Cc Type'])['Successful Trx'].sum().reset_index()
+    # 1. Create the Business Name grouping logic
+    biz_mapping = {
+        "TB_AED_Default": "Restaurants",
+        "TB_AED_DineOut": "Restaurants",
+        "TB_AED_Neg_Balance_QC": "Postpaid",
+        "TB_AED_Pay_Later_Adhoc": "Postpaid",
+        "TB_AED_Pay_Later_MIT": "Postpaid",
+        "TB_AED_Topup": "Wallet",
+        "TB_AED_Tpro": "Subscription",
+        "TB_AED_Vendor_Payment": "Restaurants"  # Grouped as Restaurants to keep it clean
+    }
+
+    # Apply mapping. If a name isn't in the list above, it keeps its original name.
+    df['Business Group'] = df['Business Name'].map(biz_mapping).fillna(df['Business Name'])
+
+    # 2. Aggregate data for Sankey (Notice the new order: Processor first, then Business Group)
+    sankey_df = df.groupby(['Processor grouped', 'Business Group', 'Cc Category', 'Cc Type'])['Successful Trx'].sum().reset_index()
     sankey_df = sankey_df[sankey_df['Successful Trx'] > 0] # Remove 0 values to clean up diagram
 
-    # Define nodes and links
-    nodes = list(pd.unique(sankey_df[['Business Name', 'Processor grouped', 'Cc Category', 'Cc Type']].values.ravel('K')))
+    # Define nodes dynamically based on the new order
+    nodes = list(pd.unique(sankey_df[['Processor grouped', 'Business Group', 'Cc Category', 'Cc Type']].values.ravel('K')))
     node_mapping = {node: i for i, node in enumerate(nodes)}
 
-    # Link: Business Name -> Processor
-    source1 = sankey_df['Business Name'].map(node_mapping).tolist()
-    target1 = sankey_df['Processor grouped'].map(node_mapping).tolist()
+    # Link 1: Processor grouped -> Business Group
+    source1 = sankey_df['Processor grouped'].map(node_mapping).tolist()
+    target1 = sankey_df['Business Group'].map(node_mapping).tolist()
     value1 = sankey_df['Successful Trx'].tolist()
 
-    # Link: Processor -> CC Category
-    source2 = sankey_df['Processor grouped'].map(node_mapping).tolist()
+    # Link 2: Business Group -> CC Category
+    source2 = sankey_df['Business Group'].map(node_mapping).tolist()
     target2 = sankey_df['Cc Category'].map(node_mapping).tolist()
     value2 = sankey_df['Successful Trx'].tolist()
 
-    # Link: CC Category -> CC Type
+    # Link 3: CC Category -> CC Type
     source3 = sankey_df['Cc Category'].map(node_mapping).tolist()
     target3 = sankey_df['Cc Type'].map(node_mapping).tolist()
     value3 = sankey_df['Successful Trx'].tolist()
@@ -180,6 +195,7 @@ if uploaded_file is not None:
     targets = target1 + target2 + target3
     values = value1 + value2 + value3
 
+    # Generate Figure
     fig_sankey = go.Figure(data=[go.Sankey(
         node=dict(
             pad=15,
