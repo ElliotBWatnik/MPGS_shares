@@ -17,12 +17,15 @@ if uploaded_file is not None:
     # Ensure Month is treated as a string or period for sorting
     df['Month'] = df['Month'].astype(str)
     
-    # --- 2. DATA MANIPULATION ---
+# --- 2. DATA MANIPULATION ---
     # Create "Processor grouped" column based on your logic
     def group_processor(proc):
         if pd.isna(proc):
             return "null"
-        proc_str = str(proc).lower()
+        
+        # .strip() removes any hidden spaces at the beginning or end of the text
+        proc_str = str(proc).strip().lower()
+        
         if proc_str.startswith("cko"):
             return "Checkout"
         elif proc_str.endswith("mpgs"):
